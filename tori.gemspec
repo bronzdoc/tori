@@ -6,7 +6,7 @@ require 'tori/version'
 Gem::Specification.new do |spec|
   spec.name          = "tori"
   spec.version       = Tori::VERSION
-  spec.authors       = ["bronzdoc"]
+  spec.authors       = ["Luis Sagastume"]
   spec.email         = ["lsagastume1990@gmail.com"]
 
   spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
@@ -26,6 +26,8 @@ Gem::Specification.new do |spec|
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
+
+  spec.add_dependency "bencode"
 
   spec.add_development_dependency "bundler", "~> 1.10"
   spec.add_development_dependency "rake", "~> 10.0"
