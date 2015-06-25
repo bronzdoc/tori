@@ -64,7 +64,7 @@ module Tori
 	    if info.has_key? "length"
 		length = info["length"]
 	    else
-		info["files"].each {|file| lenght += file["length"]}
+		info["files"].each {|file| length += file["length"]}
 	    end
 	    length
 	end
