@@ -4,6 +4,10 @@
 #$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require "tori"
-torrent = Tori::Torrent.new "spec/fixtures/the.maze.runner.book.a.e.torrent"
-p torrent.peers
+#torrent = Tori::Torrent.new "spec/fixtures/the.maze.runner.book.a.e.torrent"
+#torrent = Tori::Torrent.new "spec/fixtures/test.torrent"
+torrent = Tori::Torrent.new "spec/fixtures/ubuntu-14.10-desktop-i386.iso.torrent"
+peers =  torrent.peers
+p peers
+
 
