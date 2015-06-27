@@ -10,14 +10,32 @@ module Tori
 	attr_reader :metadata, :announce
 
 	def initialize(torrent_file=nil)
-	     raise Tori::TorrentError if torrent_file.nil?
-             bencoded_stream = File.open(File.expand_path(torrent_file)).read
-	     @metadata = parse bencoded_stream
-	     @announce = @metadata["announce"]
+	    raise Tori::TorrentError if torrent_file.nil?
+	    bencoded_stream = File.open(File.expand_path(torrent_file)).read
+	    @metadata = parse bencoded_stream
+	    @announce = @metadata["announce"]
 	end
 
 	def peers
-	    params = {
+	    peers = request_tracker()["peers"]
+
+	    # Divide byte string into 6 byte chunks
+	    peer_ips_hex = []
+	    peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("H*").first }
+
+	    # Parse ip and port and store it
+	    # NOTE the ip is the first four bytes the reminding 2 combined is the port
+	    peer_ips = []
+	    peer_ips_hex.each do |hex_ip|
+		byte_divided_ip = hex_ip.scan(/.{2}/)
+		ip_segment = 4.times.map {|i| byte_divided_ip[i].to_i(16).to_s 10}
+		port = "#{byte_divided_ip[3]}#{byte_divided_ip[4]}".to_i(16).to_s 10
+		peer_ips << "#{ip_segment[0]}.#{ip_segment[1]}.#{ip_segment[2]}.#{ip_segment[3]}:#{port}"
+	    end
+	    peer_ips
+	end
+
+	def request_tracker(params={
 		# URL encoded 20-byte SHA1 hash of the value of the info key from the Metainfo file.
 		# Note that the value will be a bencoded dictionary,
 		info_hash:  Digest::SHA1.digest(@metadata["info"].bencode),
@@ -48,11 +66,11 @@ module Tori
 
 		# event: If specified, must be one of started, completed, stopped
 		# If not specified, then this request is one performed at regular intervals.
-		   # started: The first request to the tracker must include the event key with this value.
-		   # stopped: Must be sent to the tracker if the client is shutting down gracefully.
-		   # completed: Must be sent to the tracker when the download completes. However, must not be sent if the download was already 100% complete when the client started. Presumably, this is to allow the tracker to increment the "completed downloads" metric based solely on this event
+		# started: The first request to the tracker must include the event key with this value.
+		# stopped: Must be sent to the tracker if the client is shutting down gracefully.
+		# completed: Must be sent to the tracker when the download completes. However, must not be sent if the download was already 100% complete when the client started. Presumably, this is to allow the tracker to increment the "completed downloads" metric based solely on this event
 		event:      "started"
-	    }
+	    })
 
 	    tracker = URI @announce
 	    tracker = URI "http://#{tracker.host}#{tracker.path}" if tracker.scheme == "udp"
@@ -61,28 +79,13 @@ module Tori
 	    res = Net::HTTP.get_response(tracker)
 	    tracker_response = BEncode::Parser.new(res.body).parse! #if res.is_a?(Net::HTTPSuccess)
 
-	    peers = tracker_response["peers"]
-
-	    # Divide byte string into 6 byte chunks
-	    peer_ips_hex = []
-	    peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("H*").first }
-
-	    # Parse ip and port and store it
-	    # NOTE the ip is the first four bytes the reminding 2 combined is the port
-	    peer_ips = []
-	    peer_ips_hex.each do |hex_ip|
-		byte_divided_ip = hex_ip.scan(/.{2}/)
-		ip_segment = 4.times.map {|i| byte_divided_ip[i].to_i(16).to_s 10}
-		port = "#{byte_divided_ip[3]}#{byte_divided_ip[4]}".to_i(16).to_s 10
-		peer_ips << "#{ip_segment[0]}.#{ip_segment[1]}.#{ip_segment[2]}.#{ip_segment[3]}:#{port}"
-	    end
-	    peer_ips
+	    tracker_response
 	end
 
-        private
+	private
 	def length
 	    length = 0
-            info = @metadata["info"]
+	    info = @metadata["info"]
 	    if info.has_key? "length"
 		length = info["length"]
 	    else
