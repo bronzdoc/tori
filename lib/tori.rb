@@ -61,10 +61,22 @@ module Tori
 	    res = Net::HTTP.get_response(tracker)
 	    tracker_response = BEncode::Parser.new(res.body).parse! #if res.is_a?(Net::HTTPSuccess)
 
-	    tracker_response["peers"]
+	    peers = tracker_response["peers"]
 
-	    #socket = UDPSocket.new
-	    #socket.bind "127.0.0.1", "4913"
+	    # Divide byte string into 6 byte chunks
+	    peer_ips_hex = []
+	    peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("H*").first }
+
+	    # Parse ip and port and store it
+	    # NOTE the ip is the first four bytes the reminding 2 combined is the port
+	    peer_ips = []
+	    peer_ips_hex.each do |hex_ip|
+		byte_divided_ip = hex_ip.scan(/.{2}/)
+		ip_segment = 4.times.map {|i| byte_divided_ip[i].to_i(16).to_s 10}
+		port = "#{byte_divided_ip[3]}#{byte_divided_ip[4]}".to_i(16).to_s 10
+		peer_ips << "#{ip_segment[0]}.#{ip_segment[1]}.#{ip_segment[2]}.#{ip_segment[3]}:#{port}"
+	    end
+	    peer_ips
 	end
 
         private

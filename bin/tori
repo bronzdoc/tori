@@ -8,50 +8,7 @@ require "tori"
 #torrent = Tori::Torrent.new "spec/fixtures/test.torrent"
 torrent = Tori::Torrent.new "spec/fixtures/ubuntu-14.10-desktop-i386.iso.torrent"
 peers = torrent.peers
+p peers
 
-peer_ips_hex = []
-peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("H*").first }
 
-peer_ips = []
-peer_ips_hex.each do |hex_ip|
-    bdip = hex_ip.scan(/.{2}/) # Byte divided ip
-    ip_segment = 4.times.map {|i| bdip[i].to_i(16).to_s 10}
-    port = "#{bdip[3]}#{bdip[4]}".to_i(16).to_s 10
-
-    peer_ips << "#{ip_segment[0]}.#{ip_segment[1]}.#{ip_segment[2]}.#{ip_segment[3]}:#{port}"
-end
-p peer_ips
-
-size_to_go = peers.size / 6
-start = 0
-finish = 5
-
-#hex_peer_ips = []
-#size_to_go.times do
-#    ip = ""
-#    peers[start..finish].split("").each do |peer|
-#	hex = peer.unpack("H*")[0]
-#	dec = hex.to_i(16).to_s 10
-#	#p "#{hex} -> #{dec}"
-#	ip += hex
-#    end
-#    hex_peer_ips << ip
-#    start = finish + 1
-#    finish += 6
-#end
-#
-#hex_peer_ips.each do |ips|
-#    i = 0
-#    peer_ips = ""
-#    p ips.scan /.{2}/
-#    #ips.split("")
-#    #p peer_ips
-#end
-
-#p "------------------"
-#peers[0..5].split("").each do |peer|
-#    hex = peer.unpack("h*")[0]
-#    dec = hex.to_i(16).to_s 10
-#    p "#{hex} -> #{dec}"
-#end
 
