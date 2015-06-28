@@ -24,7 +24,7 @@ module Tori
 	    peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("H*").first }
 
 	    # Parse ip and port and store it
-	    # NOTE the ip is the first four bytes the reminding 2 combined is the port
+	    # NOTE the ip is the first four bytes, the reminding 2 combined is the port
 	    peer_ips = []
 	    peer_ips_hex.each do |hex_ip|
 		byte_divided_ip = hex_ip.scan(/.{2}/)
@@ -35,7 +35,8 @@ module Tori
 	    peer_ips
 	end
 
-	def request_tracker(params={
+	def request_tracker(&block)
+	    params={
 		# URL encoded 20-byte SHA1 hash of the value of the info key from the Metainfo file.
 		# Note that the value will be a bencoded dictionary,
 		info_hash:  Digest::SHA1.digest(@metadata["info"].bencode),
@@ -70,14 +71,17 @@ module Tori
 		# stopped: Must be sent to the tracker if the client is shutting down gracefully.
 		# completed: Must be sent to the tracker when the download completes. However, must not be sent if the download was already 100% complete when the client started. Presumably, this is to allow the tracker to increment the "completed downloads" metric based solely on this event
 		event:      "started"
-	    })
+	    }
+
+	    # Edit params when needed
+	    block.call params if block_given?
 
 	    tracker = URI @announce
 	    tracker = URI "http://#{tracker.host}#{tracker.path}" if tracker.scheme == "udp"
 
 	    tracker.query = URI.encode_www_form(params)
 	    res = Net::HTTP.get_response(tracker)
-	    tracker_response = BEncode::Parser.new(res.body).parse! #if res.is_a?(Net::HTTPSuccess)
+	    tracker_response = BEncode::Parser.new(res.body).parse!
 
 	    tracker_response
 	end
