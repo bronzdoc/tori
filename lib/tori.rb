@@ -27,33 +27,16 @@ module Tori
 
 	    # Divide byte string into 6 byte chunks
 	    peer_ips_hex = []
-	    test_ips_hex = []
-	    peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("H*").first }
-	    peers.scan(/.{6}/).each { |byte| test_ips_hex << byte.unpack("a4n") }
-
-	    p test_ips_hex
+	    peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("a4n") }
 
 	    # Parse ip and port and store it
 	    # NOTE the ip is the first four bytes, the reminding 2 combined is the port
 	    peer_ips = []
-	    peer_ips_hex.each do |hex_ip|
-		byte_divided_ip = hex_ip.scan(/.{2}/)
-		ip_segment = 4.times.map {|i| byte_divided_ip[i].to_i(16).to_s 10}
-		port = "#{byte_divided_ip[3]}#{byte_divided_ip[4]}".to_i(16).to_s 10
-		peer_ips << { host: "#{ip_segment[0]}.#{ip_segment[1]}.#{ip_segment[2]}.#{ip_segment[3]}", port: port }
-	    end
-
-	    test_ips = []
-	    test_ips_hex.each do |hex_ip, port|
-		test_ips << { host: "#{IPAddr.new_ntoh(hex_ip).to_s}", port: port }
-	    end
-
-	    3.times do |i|
-	        p "peer_ip: #{peer_ips[i]} -> test_ip: #{test_ips[i]} "
+	    peer_ips_hex.each do |hex_ip, port|
+		peer_ips << { host: "#{IPAddr.new_ntoh(hex_ip).to_s}", port: port }
 	    end
 
 	    peer_ips
-	    test_ips
 	end
 
 	def request_tracker(&block)
@@ -145,15 +128,14 @@ module Tori
 		peer_id = @torrent.peer_id
 
 		message = "#{pstrlen}#{pstr}#{reserved}#{info_hash}#{peer_id}"
-		p message
-		p ip
-		p port
 		socket = TCPSocket.new ip, port
-		p "got here"
 		socket.write message
-		while line = socket.gets
-		    block.call(line) if block_given?
-		end
+
+		p socket.gets
+
+		#while line = socket.gets
+		#    block.call(line) if block_given?
+		#end
 
 		#request = Net::HTTP.get g_peer
 		#res = Net::HTTP.get_response request
