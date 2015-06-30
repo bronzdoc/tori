@@ -1,14 +1,11 @@
 #!/usr/bin/env ruby
-#lib = File.expand_path("../../lib", __FILE__)
-#p lib
-#$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-
 require "tori"
+
 #torrent = Tori::Torrent.new "spec/fixtures/the.maze.runner.book.a.e.torrent"
 #torrent = Tori::Torrent.new "spec/fixtures/test.torrent"
-torrent = Tori::Torrent.new "spec/fixtures/ubuntu-14.10-desktop-i386.iso.torrent"
-peers = torrent.peers
-p peers
+
+client = Tori.client "spec/fixtures/ubuntu-14.10-desktop-i386.iso.torrent"
+
 
 
 
