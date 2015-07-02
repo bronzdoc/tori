@@ -30,13 +30,12 @@ module Tori
 	    # Divide byte string into 6 byte chunks
 	    peer_ips_hex = []
 	    peers.scan(/.{6}/).each { |byte| peer_ips_hex << byte.unpack("a4n") }
-	    p peer_ips_hex
 
 	    # Parse ip and port and store it
 	    # NOTE the ip is the first four bytes, the reminding 2 combined is the port
 	    peer_ips = []
 	    peer_ips_hex.each do |hex_ip, port|
-		peer_ips << Peer.new hex_ip, port
+		peer_ips << Peer.new(IPAddr.new_ntoh(hex_ip).to_s, port)
 	    end
 
 	    peer_ips
