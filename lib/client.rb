@@ -11,43 +11,50 @@ module Tori
 		peer_choking:    1, #peer is choking this client
 		peer_interested: 0  #peer is interested in this client
 	    }
+	    @active_peers = []
 	end
 
 	def download
+	    connect_to_peers
+	    @active_peers.each do |peer|
+	    end
 	end
 
 	def upload
 	end
 
 	private
-	def connect(&block)
+	def connect_to_peers
 	    @torrent.peers.each do |peer|
-		begin
-		    connected_with_peer? = handshake peer
-		    Thread.new do
-			socket.write message
-			p socket.read 1
-			p socket.read 19
-			p socket.read 8
-			p socket.read(20).unpack "a*"
-			p socket.read(20).unpack "a*"
-		    end
-		rescue
-		    p $!
+		handshake_response = peer.connect handshake
+		if handshake_response && handshake_response[:info_hash] != @torrent.info_hash
+		    disconnect peer
+		else
+		    @active_peers << peer
 		end
+
+	        #TODO Remove this, only for testing
+		break if @active_peers.size > 0
 	    end
 	end
 
-	def handshake(peer)
+	def handshake
 	    pstr = "BitTorrent protocol"
-	    pstrlen =  [pstr.size].pack "C*"
+	    pstrlen = [pstr.size].pack "C*"
 	    reserved = "\x00\x00\x00\x00\x00\x00\x00\x00"
 	    info_hash = @torrent.info_hash
 	    peer_id = @torrent.peer_id
 	    message = "#{pstrlen}#{pstr}#{reserved}#{info_hash}#{peer_id}"
 
-	    socket = TCPSocket.new peer.ip, peer.port
-	    socker.gets
+	    message
+	end
+
+	def disconnect(peer)
+	    peer.connection.close
+	end
+
+	def send_message peer
+	    peer.connection.write
 	end
     end
 end
