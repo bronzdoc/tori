@@ -1,7 +1,7 @@
 # Tori
-## Installation
+A  bittorrent client for ruby
 
-Add this line to your application's Gemfile:
+## Installation
 
 ```ruby
 gem 'tori'
@@ -16,8 +16,9 @@ Or install it yourself as:
     $ gem install tori
 
 ## Usage
+    This project is under development, not ready to use...
 
-## Development
+
 
 ## Contributing
 
@@ -27,4 +28,3 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/[USERN
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-
