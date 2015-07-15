@@ -24,12 +24,14 @@ module Tori
 			peer_id:   @connection.read(20).unpack("M*")[0]
 		    }
 		    response
-		else
-		    raise
 		end
 	    rescue
-		p "#{@ip}:#@port} FAILED -> #{p $!}"
+		p "#{@ip}:#{@port} FAILED -> #{$!}"
 	    end
+	end
+
+        def close_connection
+	    @connection.close
 	end
 
 	def connected?
