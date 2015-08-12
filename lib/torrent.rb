@@ -88,29 +88,48 @@ module Tori
 
       response =
         if tracker.scheme == "udp"
-          # TODO need to implement udp based trackers
           udp_socket = UDPSocket.new
-          connection_id = "\x00\x00\x04\x17\x24\x12\x14\x80"
-          transaction_id = "\x00\x00\x04\x12"
-          action = "\x00\x00\x00\x00"
 
-          buffer = connection_id
-          buffer << action
-          buffer << transaction_id
+          ## Request Tracker for
+          # Offset   | Size               | Name           | Value
+          # -----------------------------------------------------------------------
+          # 0        | 8 (64 bit integer) | connection id  | for this request, the initial value 0x41727101980
+          # 8        | 4 (32-bit integer) | action  0 for  | connection request
+          # 12       | 4 (32-bit integer) | transaction id | a random number created by client
+          connection_id = 0x41727101980
+          buffer = [connection_id >> 32, connection_id & 0xffffffff, 0, 16].pack('N*')
+
+          #c0, c1, action, client_transaction_id = buffer.unpack "N*"
+
+          udp_socket.send buffer, 0, tracker.host, tracker.port
+          res = udp_socket.recvfrom(5000)
+
+          ## Tracker response
+          # Offset |  Size               | Name            | Value
+          #------------------------------------------------------------------------
+          # 0      |  4 (32-bit integer) | action          | 0 for connect response
+          # 4      |  4 (32-bit integer) | transaction id  | same like request's transaction id.
+          # 8      |  8 (64 bit integer) | connection id   | a connection id that must be acceptable for at least 2 minutes from source
+          res_action, res_transaction_id, c1, c0 = res[0].unpack "N*"
+
+          # We need to check if the transaction id match with the transaction_id of the response
+          if res_transaction_id == client_transaction_id
+          end
 
           # If a response is not received after 15 * 2 ^ n seconds, the client should retransmit the request,
           # where n starts at 0 and is increased up to 8 (3840 seconds) after every retransmission.
           # Note that it is necessary to rerequest a connection ID when it has expired.
-          0.upto 8 do |n|
-            p tracker.host
-            udp_socket.send buffer, 0, tracker.host, tracker.port
-            Thread.new do
-              if restest = udp_socket.recvfrom(5000)
-                p restest
-              end
-            end
-            sleep 15 * (2**n)
-          end
+
+          #0.upto 8 do |n|
+          #  p tracker.host
+          #  Thread.new do
+          #    udp_socket.send buffer, 0, tracker.host, tracker.port
+          #    if restest = udp_socket.recvfrom(5000)
+          #      p restest
+          #    end
+          #  end
+          #  sleep 15 * (2**n)
+          #end
         else
           tracker.query = URI.encode_www_form(params)
           res = Net::HTTP.get_response(tracker)
