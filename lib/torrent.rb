@@ -43,7 +43,7 @@ module Tori
     end
 
     def request_tracker(&block)
-      params={
+      params = {
         # URL encoded 20-byte SHA1 hash of the value of the info key from the Metainfo file.
         # Note that the value will be a bencoded dictionary,
         info_hash:  @info_hash,
@@ -100,9 +100,6 @@ module Tori
           first_32_bit_conn_id =  0x41727101980 >> 32
           second_32_bit_conn_id = 0x41727101980 & 0xffffffff
 
-          #connection_id = 0x41727101980
-          #buffer = [connection_id >> 32, connection_id & 0xffffffff, 0, 16].pack "N*"
-
           buffer = [first_32_bit_conn_id, second_32_bit_conn_id, 0, 16].pack "N*"
           c0, c1, action, client_transaction_id = buffer.unpack "N*"
 
@@ -115,23 +112,7 @@ module Tori
           # 0      |  4 (32-bit integer) | action          | 0 for connect response
           # 4      |  4 (32-bit integer) | transaction id  | same like request's transaction id.
           # 8      |  8 (64 bit integer) | connection id   | a connection id that must be acceptable for at least 2 minutes from source
-          #res_action, res_transaction_id, res_connection_id = res[0].unpack "N*"
           res_action, res_transaction_id, res_connection_id = res[0].unpack "NNQ"
-
-          #####  buildAnnounceRequest #####
-          #connection id:  1417659898586446182
-          #transaction id: -2025418972
-          #info hash:      [43, 111, 16, -4, 40, -83, -128, -83, -16, -78, -66, -114, -9, 96, 119, -122, 40, 39, 42, -19]
-          #peer id:        [45, 84, 79, 48, 48, 52, 50, 45, 52, 54, 53, 99, 54, 48, 52, 51, 56, 54, 57, 49]
-          #downloaded:     0
-          #uploaded        0
-          #left:           1130449
-          #event:          STARTED
-          #adress:         /127.0.1.1
-          #key:            0
-          #num want:       50
-          #port:           49152
-          #Setting announce interval to 1656s per tracker request.
 
           client_announce = [
             res_connection_id,
@@ -154,36 +135,16 @@ module Tori
             50,
             params[:port]
           ].pack("Q<NNA20A20NNQ<NNNNNNS")
-          #.pack("SNNNNNQ<NNNA20A20NNQ<")
-          p client_announce.unpack("Q<NNA20A20NNQ<NNNNNNS")
 
-          #client_announce = [
-          #  params[:port],
-          #  50,
-          #  0,
-          #  "127.0.1.1",
-          #  params[:event],
-          #  params[:left],
-          #  0,
-          #  0,
-          #  @peer_id,
-          #  @info_hash,
-          #  res_transaction_id,
-          #  1,
-          #  res_connection_id & 0xffffffff,
-          #  res_connection_id >> 32
-          #].pack("SNNBBQQQBBN*")
-
-          p client_announce.size
-
-          # We need to check if the transaction id match with the transaction_id of the response
-          # TODO request announce
+          # Check if the transaction id match with the transaction_id of the response
           if res_transaction_id == client_transaction_id
             udp_socket.send client_announce, 0, tracker.host, tracker.port
+
             res = udp_socket.recvfrom(5000)
-            p "#{res[0].unpack("N*")} #{res[1]}"
+            announce_response = res[0].unpack("N5A*")
           end
 
+          {"peers" => announce_response[5]}
           # If a response is not received after 15 * 2 ^ n seconds, the client should retransmit the request,
           # where n starts at 0 and is increased up to 8 (3840 seconds) after every retransmission.
           # Note that it is necessary to rerequest a connection ID when it has expired.
