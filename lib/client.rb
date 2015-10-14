@@ -5,7 +5,7 @@ require "tracker_manager"
 
 module Tori
   class Client
-    attr_reader :torrent, :active_peers, :state, :tracker
+    attr_reader :torrent, :peer_id, :active_peers, :state, :tracker
     def initialize torrent_obj
       @torrent = torrent_obj
       @state = {
@@ -29,7 +29,8 @@ module Tori
 
     private
     def connect_to_peers
-      request_tracker
+      get_tracker
+
       @tracker.peers.each do |peer|
         handshake_response = peer.connect handshake
         if handshake_response && handshake_response[:info_hash] != @torrent.info_hash
@@ -37,7 +38,6 @@ module Tori
         else
           @active_peers << peer
         end
-        p @active_peers.size
         # TODO Remove this, only for testing
         break if @active_peers.size > 0
       end
@@ -48,7 +48,7 @@ module Tori
       pstr = "BitTorrent protocol"
       reserved = [0,0].pack "N*"
       info_hash = @torrent.info_hash
-      peer_id = @torrent.peer_id
+      peer_id = @tracker.peer_id
       message = "#{pstrlen}#{pstr}#{reserved}#{info_hash}#{peer_id}"
       message
     end
@@ -57,14 +57,13 @@ module Tori
       peer.close_connection
     end
 
-    def request_tracker
+    def get_tracker
       @tracker = Tori::TrackerManager.build(@torrent)
     end
 
     def send_message(type, peer)
       @active_peers.each do
         res = peer.send Message.new(type)
-        p "eto es res => #{res}"
         #case res.type
         #when :keep_alive
         #   peer.send Message.new
