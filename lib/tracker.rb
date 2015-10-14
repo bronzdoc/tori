@@ -8,12 +8,12 @@ require "peer"
 
 module Tori
   class Tracker
-    attr_reader :options, :peers, :response, :tracker
+    attr_reader :options, :peer_id, :peers, :response, :tracker
 
     def initialize(torrent)
+      @peer_id = Digest::SHA1.digest "#{Process.pid}#{DateTime.now}"
       @torrent = torrent
       @tracker = URI @torrent.announce
-      @peer_id = Digest::SHA1.digest "#{Process.pid}#{DateTime.now}"
       @options = {
         # URL encoded 20-byte SHA1 hash of the value of the info key from the Metainfo file.
         # Note that the value will be a bencoded dictionary,
