@@ -1,6 +1,6 @@
 module Tori
   class Torrent
-    attr_reader :metadata, :announce, :info_hash, :peer_id, :peers, :options
+    attr_reader :metadata, :announce, :info_hash
 
     def initialize(torrent_file=nil)
       raise Tori::TorrentError if torrent_file.nil?
