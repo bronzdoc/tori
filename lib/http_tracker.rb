@@ -2,7 +2,7 @@ require "tracker"
 
 module Tori
   class HTTPTracker < Tracker
-    def  initialize(torrent)
+    def initialize(torrent)
       super(torrent)
     end
 

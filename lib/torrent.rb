@@ -1,14 +1,18 @@
 module Tori
   class Torrent
-    attr_reader :metadata, :announce, :info_hash
+    attr_reader :trackers, :info_hash
 
     def initialize(torrent_file=nil)
       raise Tori::TorrentError if torrent_file.nil?
 
       bencoded_stream = File.open(File.expand_path(torrent_file)).read
+      @metadata = parse(bencoded_stream)
 
-      @metadata = parse bencoded_stream
-      @announce = @metadata["announce"]
+      @trackers = []
+      @metadata["announce-list"].each do |announce|
+        @trackers << Tori::TrackerManager.build(announce.first) unless announce.first.nil?
+      end
+
       @info_hash = Digest::SHA1.digest(@metadata["info"].bencode)
     end
 
